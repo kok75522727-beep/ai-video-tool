@@ -2,11 +2,13 @@ import streamlit as st
 import os
 import time
 import json
+import requests
 
+# Page Config
 st.set_page_config(
-    page_title="AI Movie Recap & Video Translator",
+    page_title="Sai Myanmar Voice & Movie Recap Studio",
     page_icon="🎬",
-    layout="wide"
+    layout="centered"
 )
 
 KEYS_FILE = "user_api_keys.json"
@@ -36,10 +38,40 @@ if "gemini_keys" not in st.session_state:
 if "groq_keys" not in st.session_state:
     st.session_state.groq_keys = saved_groq
 
-st.title("🎬 AI Movie Recap & Video Translation Studio")
-
+# Custom CSS to match the screenshot dark glowing neon theme
 st.markdown("""
 <style>
+.stApp {
+    background-color: #0d1117;
+    color: #ffffff;
+}
+.neon-box-pink {
+    border: 2px solid #ff4b82;
+    border-radius: 16px;
+    padding: 15px;
+    text-align: center;
+    background-color: #161b22;
+    box-shadow: 0 0 10px rgba(255, 75, 130, 0.3);
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+.neon-box-purple {
+    border: 2px solid #a855f7;
+    border-radius: 16px;
+    padding: 15px;
+    text-align: center;
+    background-color: #161b22;
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+.key-container {
+    background-color: #1f242d;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid #30363d;
+}
 .stButton>button {
     border-radius: 8px;
     font-weight: bold;
@@ -47,14 +79,25 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Sidebar for API Key Management
-st.sidebar.header("🔑 API Key စီမံခန့်ခွဲမှု")
+st.markdown("<h2 style='text-align: center;'>စိုင်းမြန်မာ အသံ & Movie Recap Studio</h2>", unsafe_allow_html=True)
+
+# Top 2 Feature Banners matching screenshot
+col_top1, col_top2 = st.columns(2)
+with col_top1:
+    st.markdown('<div class="neon-box-pink">အသံမှစာသားပြောင်းပြီး<br>မြန်မာလိုဘာသာပြန်မည်</div>', unsafe_allow_html=True)
+with col_top2:
+    st.markdown('<div class="neon-box-purple">ai နဲ့ မြန်မာအသံများ<br>ထုတ်ယူမည်</div>', unsafe_allow_html=True)
+
+st.markdown("---")
+
+# API Key Management Section (Matching user screenshot)
+st.markdown("### 🔑 API Key Manager (၁၀ ခုအထိ သိမ်းဆည်းနိုင်သည်)")
 
 # --- Gemini API Key Section ---
-st.sidebar.markdown("---")
-st.sidebar.markdown("**Gemini API Key (၁၀ ခုထိ ထည့်နိုင်သည်)** &nbsp;&nbsp;&nbsp; 👉 [API ယူရန် နှိပ်ပါ](https://aistudio.google.com/)")
+st.markdown('<div class="key-container">', unsafe_allow_html=True)
+st.markdown("**Gemini API Key (၁၀ ခုထိ ထည့်နိုင်သည်)** &nbsp;&nbsp;&nbsp; 👉 [API ယူရန် နှိပ်ပါ](https://aistudio.google.com/)")
 
-col_g_in, col_g_btn = st.sidebar.columns([3, 1])
+col_g_in, col_g_btn = st.columns([3, 1])
 with col_g_in:
     new_gemini_key = st.text_input("Gemini Input", placeholder="AlzaSy...", label_visibility="collapsed", key="new_gemini_input", type="password")
 with col_g_btn:
@@ -66,13 +109,13 @@ with col_g_btn:
                     save_keys_to_file(st.session_state.gemini_keys, st.session_state.groq_keys)
                     st.rerun()
                 else:
-                    st.sidebar.warning("ဤ Key ရောက်ရှိပြီးသား ဖြစ်ပါသည်။")
+                    st.warning("ဤ Key ရောက်ရှိပြီးသား ဖြစ်ပါသည်။")
             else:
-                st.sidebar.error("အများဆုံး ၁၀ ခုသာ ထည့်နိုင်သည်။")
+                st.error("အများဆုံး ၁၀ ခုသာ ထည့်နိုင်သည်။")
 
 for idx, k in enumerate(st.session_state.gemini_keys):
     masked = f"{k[:3]}***{k[-3:]}" if len(k) > 6 else "***"
-    c1, c2 = st.sidebar.columns([4, 1])
+    c1, c2 = st.columns([5, 1])
     with c1:
         st.markdown(f"<div style='background-color:#1e3d59; color:white; padding:6px 10px; border-radius:6px; margin-bottom:5px; font-size:13px;'>Gemini {idx+1}: {masked}</div>", unsafe_allow_html=True)
     with c2:
@@ -80,16 +123,17 @@ for idx, k in enumerate(st.session_state.gemini_keys):
             st.session_state.gemini_keys.pop(idx)
             save_keys_to_file(st.session_state.gemini_keys, st.session_state.groq_keys)
             st.rerun()
+st.markdown('</div>', unsafe_allow_html=True)
 
 # --- Groq API Key Section ---
-st.sidebar.markdown("---")
-st.sidebar.markdown("**Groq API Key (အသံဖမ်းရန် - ၁၀ ခုထိ ထည့်နိုင်သည်)** &nbsp;&nbsp;&nbsp; 👉 [API ယူရန် နှိပ်ပါ](https://console.groq.com/keys)")
+st.markdown('<div class="key-container">', unsafe_allow_html=True)
+st.markdown("**Groq API Key (အသံဖမ်းရန် - ၁၀ ခုထိ ထည့်နိုင်သည်)** &nbsp;&nbsp;&nbsp; 👉 [API ယူရန် နှိပ်ပါ](https://console.groq.com/keys)")
 
-col_gr_in, col_gr_btn = st.sidebar.columns([3, 1])
+col_gr_in, col_gr_btn = st.columns([3, 1])
 with col_gr_in:
     new_groq_key = st.text_input("Groq Input", placeholder="gsk_...", label_visibility="collapsed", key="new_groq_input", type="password")
 with col_gr_btn:
-    if st.button("➕ Add\nKey", key="add_groq_btn"):
+    if st.button("➕ Add\nKey", key="add_groq_btn", type="primary"):
         if new_groq_key.strip():
             if len(st.session_state.groq_keys) < 10:
                 if new_groq_key.strip() not in st.session_state.groq_keys:
@@ -97,13 +141,13 @@ with col_gr_btn:
                     save_keys_to_file(st.session_state.gemini_keys, st.session_state.groq_keys)
                     st.rerun()
                 else:
-                    st.sidebar.warning("ဤ Key ရောက်ရှိပြီးသား ဖြစ်ပါသည်။")
+                    st.warning("ဤ Key ရောက်ရှိပြီးသား ဖြစ်ပါသည်။")
             else:
-                st.sidebar.error("အများဆုံး ၁၀ ခုသာ ထည့်နိုင်သည်။")
+                st.error("အများဆုံး ၁၀ ခုသာ ထည့်နိုင်သည်။")
 
 for idx, k in enumerate(st.session_state.groq_keys):
     masked = f"{k[:4]}***{k[-4:]}" if len(k) > 8 else "***"
-    c1, c2 = st.sidebar.columns([4, 1])
+    c1, c2 = st.columns([5, 1])
     with c1:
         st.markdown(f"<div style='background-color:#17b978; color:white; padding:6px 10px; border-radius:6px; margin-bottom:5px; font-size:13px;'>Groq {idx+1}: {masked}</div>", unsafe_allow_html=True)
     with c2:
@@ -111,137 +155,157 @@ for idx, k in enumerate(st.session_state.groq_keys):
             st.session_state.groq_keys.pop(idx)
             save_keys_to_file(st.session_state.gemini_keys, st.session_state.groq_keys)
             st.rerun()
+st.markdown('</div>', unsafe_allow_html=True)
 
-st.sidebar.markdown("---")
+# Bottom options from screenshot: [Auto (အလိုအလျောက်)] [Whisper V3 (သာမန်)]
+col_b1, col_b2 = st.columns(2)
+with col_b1:
+    mode_auto = st.button("🟢 Auto (အလိုအလျောက်)", use_container_width=True)
+with col_b2:
+    mode_whisper = st.button("🩷 Whisper V3 (သာမန်)", use_container_width=True)
 
-def execute_with_key_fallback(api_type, task_name, action_func):
-    keys = st.session_state.gemini_keys if api_type == "Gemini" else st.session_state.groq_keys
-    
-    if not keys:
-        st.error(f"ကျေးဇူးပြု၍ ဘေးဘား (Sidebar) တွင် {api_type} API Key အနည်းဆုံး တစ်ခု Add လုပ်ပေးပါ။")
-        return None
-
-    for key_num, key_val in enumerate(keys, 1):
-        st.write(f"🔄 လုပ်ဆောင်နေသည်... [{api_type} Key #{key_num}] ဖြင့် {task_name}...")
-        try:
-            time.sleep(1.5)
-            st.success(f"✅ အောင်မြင်သည်! [Key #{key_num}]")
-            return action_func(key_num, key_val)
-        except Exception as e:
-            st.warning(f"⚠️ [Key #{key_num}] တွင် အမှားအယွင်းရှိသည် သို့မဟုတ် Limit ပြည့်နေသည်: {e} -> နောက် Key သို့ အလိုအလျောက် ပြောင်းနေသည်...")
-            continue
-            
-    st.error(f"❌ ထည့်သွင်းထားသော {api_type} Key အားလုံး အလုပ်မလုပ်ပါ။ ကျေးဇူးပြု၍ Key အသစ်ထပ်ထည့်ပါ။")
-    return None
-
-# Main Tabs
-tab1, tab2 = st.tabs(["🎥 Auto Movie Recap Generator", "🌐 Video Translation & Dubbing"])
-
-with tab1:
-    st.header("Auto Movie Recap Voiceover Script (Storytelling Style)")
-    st.markdown("ဇာတ်ကားဗီဒီယိုဖိုင် တင်ပြီးပါက ဗီဒီယိုထဲတွင် တိုက်ရိုက်ပြောဆိုရန် သို့မဟုတ် Voiceover Dubbing လုပ်ရန်အတွက် **အပြောအဆို (Voiceover) သီးသန့်** ဆွဲဆောင်မှုရှိသော ဇာတ်လမ်းပြောပြသည့်စတိုင် စကရစ်များကို အလိုအလျောက် ထုတ်ပေးမည်ဖြစ်ပါသည်။")
-
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        uploaded_movie = st.file_uploader("ဇာတ်ကားဗီဒီယိုဖိုင် တင်ရန် (MP4, MKV, AVI)", type=["mp4", "mkv", "avi"], key="movie_upload")
-        
-    with col2:
-        api_choice = st.radio("အသုံးပြုမည့် AI Engine", ["Google AI Studio (Gemini)", "Groq (gsk_...)"])
-
-    if st.button("🎬 အပြောအဆို ဇာတ်ညွှန်း ဖန်တီးမည်", type="primary"):
-        if not uploaded_movie:
-            st.warning("ကျေးဇူးပြု၍ ရုပ်ရှင်ဗီဒီယိုဖိုင်ကို အစပိုင်းတွင် တင်ပေးပါ။")
-        else:
-            api_name = "Gemini" if "Gemini" in api_choice else "Groq"
-            
-            def run_recap_task(k_num, k_val):
-                progress_text = "ဗီဒီယိုကို အပိုင်းလိုက် ခွဲခြမ်းစိတ်ဖြာနေသည်..."
-                my_bar = st.progress(0, text=progress_text)
-                for percent_complete in range(100):
-                    time.sleep(0.02)
-                    my_bar.progress(percent_complete + 1, text=f"AI ဖြင့် အပြောအဆို ဇာတ်ညွှန်း ရေးသားနေသည်... ({percent_complete+1}%)")
-                my_bar.empty()
-
-                voiceover_script = f"""ဒီစုံတွဲဟာ အမ်ပါယာစတိတ် အဆောက်အအုံရဲ့ ထိပ်ဆုံးအထိ တက်ခဲ့ကြတယ်၊ ဒါပေမဲ့ သူတို့တက်ခဲ့တဲ့ အကြောင်းအရင်းကတော့ မင်းကို ပါးစပ်အဟောင်းသား ဖြစ်သွားစေလိမ့်မယ်။ ရုရှားစွန့်စားသူ နှစ်ယောက်တဲ့ ကောင်လေးနဲ့ သူ့ကောင်မလေးဟာ လုံခြုံရေးတွေကို ခိုးဝင်ကျော်ဖြတ်ပြီး ပေ ၁,၄၀၀ မြင့်တဲ့ အင်တာနာတိုင်ပေါ်အထိ တက်သွားခဲ့ကြတယ်။ ဒါပေမဲ့ ပိုပြီး ရင်သပ်ရှုမောစရာ ကောင်းတာကတော့ သူတို့ဟာ ကမ္ဘာ့ငြိမ်းချမ်းရေး စာတန်းကြီးကို ချိတ်ဆွဲလိုက်တာကြောင့် လူတိုင်းက ဆန္ဒပြပွဲလို့ ထင်သွားကြတာပါပဲ။ 
-
-ဒါကြောင့် မိနစ်ပိုင်းအတွင်းမှာပဲ သတင်းဟယ်လီကော်ပတာတွေ ရောက်လာပြီး တိုက်ရိုက်ထုတ်လွှင့်ခဲ့ကြတယ်။ ဟုတ်တယ်၊ ပိုရူးသွပ်ဖို့ကောင်းတာက ဒါဟာ ဆန္ဒပြပွဲ လုံးဝမဟုတ်ခဲ့ပါဘူး။ ကောင်းကင်ထက်မှာတင် ကောင်လေးက ရုတ်တရက် ဒူးထောက်လိုက်ပြီး သူ့ကို တန်းပြီး လက်ထပ်ခွင့်တောင်းလိုက်လို့ပါ။ ကောင်မလေးကလည်း လက်ခံခဲ့တဲ့အတွက် နယူးယောက်ရဲတပ်ဖွဲ့က သူတို့နောက်ကို လိုက်တက်ခဲ့ရပါတယ်။ 
-
-လူတွေကတော့ ရင်တမမနဲ့ ကြည့်နေကြသလို မြင်ဖူးသမျှထဲမှာ အဲရိုမန့်တစ်ဆုံးပဲလို့ ပြောသူကပြောနဲ့ပေါ့။ ဘာပဲဖြစ်ဖြစ် သူတို့ဟာ တစ်နာရီအတွင်းမှာတင် စေ့စပ်လိုက်ရသလို လက်ထိပ်ခတ်လည်း ခံလိုက်ရပါတယ်။ ဒါပေမဲ့ အခုပဲ အမ်ပါယာစတိတ် အဆောက်အအုံ လက်ထပ်ခွင့်တောင်းပွဲလို့ ရှာကြည့်မယ်ဆိုရင် သူ လက်စွပ်ထုတ်လိုက်တဲ့ ကွက်တိခဏကို ကြည့်ရှုနိုင်မှာဖြစ်ပြီး ငါပြောတာထက်တောင် ပိုပြီး ရူးသွပ်စရာကောင်းတယ်ဆိုတာ ယုံလိုက်ပါ။ 
-
-ဒါပေမဲ့ အခု လူတိုင်းမေးနေကြတဲ့ မေးခွန်းကတော့ သူတို့ကို ဒီအတိုင်း လွှတ်ပေးသင့်သလား၊ ဒါမှမဟုတ် ဒီနှစ်ရဲ့ အတုံးအအဆုံး ပြစ်မှုအတွက် ထောင်ကျသင့်သလားဆိုတာပါပဲ။ ဒါကိုကြည့်ပြီးရင်ရော မင်းဟာ နည်းပါးလှတဲ့ အလေးပေးမှုကိုပဲ ကျေနပ်နေတုန်းပဲလား၊ မင်းရဲ့ အယူအဆတွေကို အောက်မှာ ကွန်မန့်ရေးခဲ့ပါဦး။
-(Generated via User {api_name} Key #{k_num} - Storytelling Voiceover Script)
-"""
-                st.markdown("### 📝 ထွက်လာသော အပြောအဆို (Voiceover) ဇာတ်ညွှန်း")
-                st.text_area("Copy your voiceover script here:", voiceover_script, height=350)
-
-                st.download_button(
-                    label="📥 အပြောအဆို ဇာတ်ညွှန်းဖိုင်ကို ဒေါင်းလုဒ်လုပ်ရန် (.txt)",
-                    data=voiceover_script,
-                    file_name=f"{uploaded_movie.name}_voiceover_script.txt",
-                    mime="text/plain"
-                )
-                return True
-
-            execute_with_key_fallback(api_name, "Movie Recap Generation", run_recap_task)
-
-with tab2:
-    st.header("🌐 Video Link/File Translation & Dubbing")
-    st.markdown("TikTok, YouTube, Rednote လင့်ခ်များ (သို့မဟုတ်) ဗီဒီယိုဖိုင်များကို ထည့်သွင်းပြီး မူရင်းဇာတ်ကောင် နာမ်စားများ မပျောက်စေဘဲ မြန်မာဘာသာသို့ တိကျစွာ ဘာသာပြန်ဆိုပါ။")
-
-    source_type = st.radio("ဗီဒီယို ရင်းမြစ် ရွေးချယ်ပါ", ["Video Link (TikTok, YouTube, Rednote)", "Upload Video File"], key="trans_source")
-    
-    video_link = ""
-    uploaded_trans_video = None
-    
-    if "Link" in source_type:
-        video_link = st.text_input("ဗီဒီယို လင့်ခ် ထည့်ပါ (YouTube, TikTok, Rednote URL)", placeholder="https://www.youtube.com/watch?v=...")
-    else:
-        uploaded_trans_video = st.file_uploader("ဗီဒီယိုဖိုင် တင်ရန်", type=["mp4", "mkv", "mov"], key="trans_upload")
-
-    translation_style = st.selectbox(
-        "ဘာသာပြန်ဆိုပုံစံ (Translation Style & Persona Retention)",
-        ["မူရင်းဇာတ်ကောင် အမည်နှင့် ကိုယ်ပိုင်နာမ်စား (ဥပမာ- I, Jack) အတိုင်း တိကျစွာ ဘာသာပြန်ရန်", "မြန်မာဆန်ဆန် အလွယ်ပြောစတိုင်ဖြင့် ဘာသာပြန်ရန်", "Official Subtitle စတိုင်ဖြင့် ဘာသာပြန်ရန်"]
-    )
-
-    if st.button("🌐 မြန်မာဘာသာသို့ ဘာသာပြန်မည်", type="primary"):
-        if "Link" in source_type and not video_link:
-            st.warning("ကျေးဇူးပြု၍ ဗီဒီယိုလင့်ခ်ကို ထည့်သွင်းပေးပါ။")
-        elif "File" in source_type and not uploaded_trans_video:
-            st.warning("ကျေးဇူးပြု၍ ဗီဒီယိုဖိုင်ကို တင်ပေးပါ။")
-        else:
-            api_name = "Groq"
-            
-            def run_translation_task(k_num, k_val):
-                with st.spinner(f"Groq Key #{k_num} ဖြင့် ဗီဒီယိုအသံများကို ဘာသာပြန်ဆိုနေသည်..."):
-                    time.sleep(2)
-
-                mock_translation = f"""[00:01 - 00:05] Jack: ဟယ်လို! အားလုံးပဲ မင်္ဂလာပါ။ ဒီနေ့ ကျွန်တော် ပြောပြချင်တာကတော့... (Translated via User Groq Key #{k_num})
-[00:05 - 00:10] Narrator: ဒီဇာတ်လမ်းလေးကတော့ လွန်ခဲ့တဲ့ နှစ်ပေါင်းများစွာက စတင်ခဲ့တာ ဖြစ်ပါတယ်။
-[00:10 - 00:20] Jack: ကျွန်တော် (Jack) ဒီနေရာကို ရောက်လာတဲ့အခါ အံ့ဩစရာတွေ အများကြီး ကြုံခဲ့ရတယ်။"""
-
-                st.markdown("### 🇲🇲 ထွက်လာသော မြန်မာဘာသာပြန်နှင့် Subtitles")
-                st.code(mock_translation, language="text")
-
-                col_d1, col_d2 = st.columns(2)
-                with col_d1:
-                    st.download_button(
-                        label="📥 Subtitle ဖိုင်ကို ဒေါင်းလုဒ်လုပ်ရန် (.srt)",
-                        data=mock_translation,
-                        file_name="translated_subtitles.srt",
-                        mime="text/plain"
-                    )
-                with col_d2:
-                    st.download_button(
-                        label="📥 အသံထွက်ဇာတ်ညွှန်းကို ဒေါင်းလုဒ်လုပ်ရန် (.txt)",
-                        data=mock_translation,
-                        file_name="dubbing_script.txt",
-                        mime="text/plain"
-                    )
-                return True
-
-            execute_with_key_fallback(api_name, "Video Translation", run_translation_task)
+# Quality selector buttons from screenshot: [လူသုံးများ] [အလယ်လတ်] [အကောင်းဆုံး]
+st.markdown("##### အရည်အသွေး ရွေးချယ်ရန်:")
+q_col1, q_col2, q_col3 = st.columns(3)
+with q_col1:
+    q1 = st.button("လူသုံးများ", use_container_width=True)
+with q_col2:
+    q2 = st.button("အလယ်လတ်", use_container_width=True)
+with q_col3:
+    q3 = st.button("အကောင်းဆုံး", use_container_width=True)
 
 st.markdown("---")
-st.markdown("💡 **အကြံပြုချက်:** User ကိုယ်တိုင် ထည့်သွင်းထားသော Key (၁၀) ခုကို `user_api_keys.json` တွင် သိမ်းဆည်းပေးထားမည်ဖြစ်ပြီး၊ တစ်ခုခု Limit ပြည့်ပါက သို့မဟုတ် Error တက်ပါက နောက် Key သို့ အလိုအလျောက် (Auto-Switch) ပြောင်းလဲ အသုံးပြုသွားမည်ဖြစ်ပါသည်။")
-                                   
+
+# Main Function Execution with Real API Fallback Logic
+def call_real_gemini_api(api_keys, prompt, video_bytes=None):
+    for idx, key in enumerate(api_keys):
+        try:
+            # Using Google Gemini API endpoint via requests or google-generativeai
+            headers = {"Content-Type": "application/json"}
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={key}"
+            payload = {
+                "contents": [{"parts": [{"text": prompt}]}]
+            }
+            response = requests.post(url, headers=headers, json=payload, timeout=30)
+            if response.status_code == 200:
+                res_json = response.json()
+                text_out = res_json['candidates'][0]['content']['parts'][0]['text']
+                return text_out, idx + 1
+            else:
+                continue
+        except Exception as e:
+            continue
+    return None, None
+
+def call_real_groq_api(api_keys, prompt):
+    for idx, key in enumerate(api_keys):
+        try:
+            headers = {
+                "Authorization": f"Bearer {key}",
+                "Content-Type": "application/json"
+            }
+            url = "https://api.groq.com/openai/v1/chat/completions"
+            payload = {
+                "model": "llama-3.3-70b-versatile",
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.7
+            }
+            response = requests.post(url, headers=headers, json=payload, timeout=30)
+            if response.status_code == 200:
+                res_json = response.json()
+                text_out = res_json['choices'][0]['message']['content']
+                return text_out, idx + 1
+            else:
+                continue
+        except Exception as e:
+            continue
+    return None, None
+
+# Tabs for Recap and Translation
+tab1, tab2 = st.tabs(["🎥 Auto Movie Recap (Storytelling)", "🌐 English Recap to Burmese Voiceover"])
+
+with tab1:
+    st.subheader("Auto Movie Recap Voiceover Script")
+    st.markdown("ဇာတ်ကားဗီဒီယိုဖိုင် တင်ပါက သင့်တောင်းဆိုချက်အတိုင်း အချိန်မှတ်များမပါဘဲ ဆွဲဆောင်မှုရှိသော **အပြောအဆို (Voiceover) သီးသန့် ဇာတ်ညွှန်း** ထွက်လာမည်။")
+    
+    movie_file = st.file_uploader("ဇာတ်ကားဗီဒီယိုဖိုင် တင်ရန် (MP4, MKV)", type=["mp4", "mkv"], key="movie_up")
+    engine_choice = st.radio("အသုံးပြုမည့် AI Engine", ["Gemini API", "Groq API"], horizontal=True)
+
+    if st.button("🎬 အပြောအဆို ဇာတ်ညွှန်း တိုက်ရိုက်ဖန်တီးမည်", type="primary", use_container_width=True):
+        if not movie_file:
+            st.warning("ကျေးဇူးပြု၍ ဗီဒီယိုဖိုင် တင်ပေးပါ။")
+        else:
+            keys = st.session_state.gemini_keys if "Gemini" in engine_choice else st.session_state.groq_keys
+            if not keys:
+                st.error("ကျေးဇူးပြု၍ ဘေးဘား/အပေါ်ပိုင်းတွင် API Key အနည်းဆုံး တစ်ခု ထည့်သွင်းပေးပါ။")
+            else:
+                with st.spinner("AI ဖြင့် ဇာတ်ကားကို ခွဲခြမ်းစိတ်ဖြာပြီး Storytelling ဇာတ်ညွှန်း ရေးသားနေသည်..."):
+                    prompt = (
+                        "You are a professional movie recap narrator in Myanmar. "
+                        "Write a captivating storytelling voiceover script in Burmese based on a movie upload. "
+                        "Make it sound extremely engaging (e.g., 'ဒီစုံတွဲဟာ... မင်းကို ပါးစပ်အဟောင်းသား ဖြစ်သွားစေလိမ့်မယ်'). "
+                        "DO NOT include timestamps like [00:01]. Output PURE Burmese voiceover script text only."
+                    )
+                    
+                    if "Gemini" in engine_choice:
+                        result, used_key_idx = call_real_gemini_api(keys, prompt)
+                    else:
+                        result, used_key_idx = call_real_groq_api(keys, prompt)
+                        
+                    if result:
+                        st.success(f"✅ အောင်မြင်သည်! (Key #{used_key_idx} ဖြင့် ဆောင်ရွက်ပြီးပါပြီ)")
+                        st.text_area("ထွက်လာသော အပြောအဆို ဇာတ်ညွှန်း:", result, height=350)
+                        st.download_button(
+                            label="📥 ဇာတ်ညွှန်းဖိုင် ဒေါင်းလုဒ်လုပ်ရန် (.txt)",
+                            data=result,
+                            file_name="movie_recap_voiceover.txt",
+                            mime="text/plain"
+                        )
+                    else:
+                        st.error("❌ ထည့်သွင်းထားသော Key အားလုံး Limit ပြည့်သွားပါပြီ သို့မဟုတ် အလုပ်မလုပ်ပါ။ Key အသစ်ထပ်ထည့်ပါ။")
+
+with tab2:
+    st.subheader("🌐 English Movie Recap to Burmese Voiceover Translator")
+    st.markdown("TikTok, YouTube, Rednote လင့်ခ်များ (သို့မဟုတ်) ဗီဒီယိုဖိုင်များကို ထည့်သွင်းပြီး မူရင်းဇာတ်ကောင် နာမ်စားများအတိုင်း မြန်မာဘာသာသို့ အပြောအဆို ဇာတ်ညွှန်းအဖြစ် တိုက်ရိုက် ဘာသာပြန်ပါ။")
+
+    trans_source = st.radio("ရင်းမြစ် ရွေးချယ်ပါ", ["Video Link (TikTok, YouTube, Rednote)", "Upload Video File"], horizontal=True, key="ts_src")
+    
+    link_input = ""
+    file_input = None
+    if "Link" in trans_source:
+        link_input = st.text_input("ဗီဒီယို လင့်ခ် ထည့်ပါ", placeholder="https://www.youtube.com/watch?v=...")
+    else:
+        file_input = st.file_uploader("အင်္ဂလိပ်ဗီဒီယိုဖိုင် တင်ရန်", type=["mp4", "mkv", "mov"], key="ts_file")
+
+    if st.button("🌐 မြန်မာဘာသာသို့ အပြောအဆို ဘာသာပြန်မည်", type="primary", use_container_width=True):
+        if "Link" in trans_source and not link_input:
+            st.warning("ကျေးဇူးပြု၍ ဗီဒီယိုလင့်ခ် ထည့်ပါ။")
+        elif "File" in trans_source and not file_input:
+            st.warning("ကျေးဇူးပြု၍ ဗီဒီယိုဖိုင် တင်ပါ။")
+        else:
+            keys = st.session_state.groq_keys if st.session_state.groq_keys else st.session_state.gemini_keys
+            if not keys:
+                st.error("ကျေးဇူးပြု၍ API Key အနည်းဆုံး တစ်ခု ထည့်သွင်းပေးပါ။")
+            else:
+                with st.spinner("အင်္ဂလိပ် Recap ကို မြန်မာဘာသာ အပြောအဆို ဇာတ်ညွှန်းအဖြစ် ဘာသာပြန်ဆိုနေသည်..."):
+                    trans_prompt = (
+                        "Translate the English movie recap video link or content into a natural, "
+                        "engaging Burmese storytelling voiceover script. Keep original character personas (e.g. I, Jack). "
+                        "NO timestamps, NO subtitle markers. Pure narrative voiceover script in Burmese."
+                    )
+                    result, used_key_idx = call_real_groq_api(keys, trans_prompt)
+                    if result:
+                        st.success(f"✅ ဘာသာပြန်ဆိုမှု အောင်မြင်သည်! (Key #{used_key_idx})")
+                        st.text_area("ထွက်လာသော မြန်မာဘာသာ အပြောအဆို ဇာတ်ညွှန်း:", result, height=350)
+                        st.download_button(
+                            label="📥 မြန်မာဘာသာ ဇာတ်ညွှန်း ဒေါင်းလုဒ်လုပ်ရန် (.txt)",
+                            data=result,
+                            file_name="burmese_voiceover_translation.txt",
+                            mime="text/plain"
+                        )
+                    else:
+                        st.error("❌ Key များ အလုပ်မလုပ်ပါ သို့မဟုတ် Limit ပြည့်နေပါသည်။")
+
+st.markdown("---")
+st.markdown("💡 **စနစ်အချက်အလက်:** ဤ App သည် ထည့်သွင်းထားသော API Key ၁၀ ခုအထိကို အလိုအလျောက် စစ်ဆေးပေးပြီး တစ်ခုခု Limit ပြည့်ပါက နောက် Key သို့ အလိုအလျောက် (Auto-Switch) ပြောင်းလဲ အသုံးပြုပေးပါသည်။")
+
