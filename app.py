@@ -38,7 +38,7 @@ if "gemini_keys" not in st.session_state:
 if "groq_keys" not in st.session_state:
     st.session_state.groq_keys = saved_groq
 
-# Custom CSS to match the screenshot dark glowing neon theme
+# Custom CSS matching the screenshot dark glowing neon theme
 st.markdown("""
 <style>
 .stApp {
@@ -157,46 +157,24 @@ for idx, k in enumerate(st.session_state.groq_keys):
             st.rerun()
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Bottom options from screenshot: [Auto (အလိုအလျောက်)] [Whisper V3 (သာမန်)]
 col_b1, col_b2 = st.columns(2)
 with col_b1:
-    mode_auto = st.button("🟢 Auto (အလိုအလျောက်)", use_container_width=True)
+    st.button("🟢 Auto (အလိုအလျောက်)", use_container_width=True)
 with col_b2:
-    mode_whisper = st.button("🩷 Whisper V3 (သာမန်)", use_container_width=True)
+    st.button("🩷 Whisper V3 (သာမန်)", use_container_width=True)
 
-# Quality selector buttons from screenshot: [လူသုံးများ] [အလယ်လတ်] [အကောင်းဆုံး]
 st.markdown("##### အရည်အသွေး ရွေးချယ်ရန်:")
 q_col1, q_col2, q_col3 = st.columns(3)
 with q_col1:
-    q1 = st.button("လူသုံးများ", use_container_width=True)
+    q_col1.button("လူသုံးများ", use_container_width=True)
 with q_col2:
-    q2 = st.button("အလယ်လတ်", use_container_width=True)
+    q_col2.button("အလယ်လတ်", use_container_width=True)
 with q_col3:
-    q3 = st.button("အကောင်းဆုံး", use_container_width=True)
+    q_col3.button("အကောင်းဆုံး", use_container_width=True)
 
 st.markdown("---")
 
-# Main Function Execution with Real API Fallback Logic
-def call_real_gemini_api(api_keys, prompt, video_bytes=None):
-    for idx, key in enumerate(api_keys):
-        try:
-            # Using Google Gemini API endpoint via requests or google-generativeai
-            headers = {"Content-Type": "application/json"}
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={key}"
-            payload = {
-                "contents": [{"parts": [{"text": prompt}]}]
-            }
-            response = requests.post(url, headers=headers, json=payload, timeout=30)
-            if response.status_code == 200:
-                res_json = response.json()
-                text_out = res_json['candidates'][0]['content']['parts'][0]['text']
-                return text_out, idx + 1
-            else:
-                continue
-        except Exception as e:
-            continue
-    return None, None
-
+# Real API Call with Key Fallback
 def call_real_groq_api(api_keys, prompt):
     for idx, key in enumerate(api_keys):
         try:
@@ -221,30 +199,50 @@ def call_real_groq_api(api_keys, prompt):
             continue
     return None, None
 
-# Tabs for Recap and Translation
+def call_real_gemini_api(api_keys, prompt):
+    for idx, key in enumerate(api_keys):
+        try:
+            headers = {"Content-Type": "application/json"}
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={key}"
+            payload = {
+                "contents": [{"parts": [{"text": prompt}]}]
+            }
+            response = requests.post(url, headers=headers, json=payload, timeout=30)
+            if response.status_code == 200:
+                res_json = response.json()
+                text_out = res_json['candidates'][0]['content']['parts'][0]['text']
+                return text_out, idx + 1
+            else:
+                continue
+        except Exception as e:
+            continue
+    return None, None
+
+# Tabs
 tab1, tab2 = st.tabs(["🎥 Auto Movie Recap (Storytelling)", "🌐 English Recap to Burmese Voiceover"])
 
 with tab1:
     st.subheader("Auto Movie Recap Voiceover Script")
-    st.markdown("ဇာတ်ကားဗီဒီယိုဖိုင် တင်ပါက သင့်တောင်းဆိုချက်အတိုင်း အချိန်မှတ်များမပါဘဲ ဆွဲဆောင်မှုရှိသော **အပြောအဆို (Voiceover) သီးသန့် ဇာတ်ညွှန်း** ထွက်လာမည်။")
+    st.markdown("ဇာတ်ကားဗီဒီယိုဖိုင် တင်ပါက သင့်တောင်းဆိုချက်အတိုင်း အချိန်မှတ်များမပါဘဲ မြန်မာဘာသာဖြင့် ဆွဲဆောင်မှုရှိသော **အပြောအဆို (Voiceover) ဇာတ်ညွှန်း** ထွက်လာမည်။")
     
     movie_file = st.file_uploader("ဇာတ်ကားဗီဒီယိုဖိုင် တင်ရန် (MP4, MKV)", type=["mp4", "mkv"], key="movie_up")
     engine_choice = st.radio("အသုံးပြုမည့် AI Engine", ["Gemini API", "Groq API"], horizontal=True)
 
-    if st.button("🎬 အပြောအဆို ဇာတ်ညွှန်း တိုက်ရိုက်ဖန်တီးမည်", type="primary", use_container_width=True):
+    if st.button("🎬 အပြောအဆို ဇာတ်ညွှန်း ဖန်တီးမည်", type="primary", use_container_width=True):
         if not movie_file:
             st.warning("ကျေးဇူးပြု၍ ဗီဒီယိုဖိုင် တင်ပေးပါ။")
         else:
             keys = st.session_state.gemini_keys if "Gemini" in engine_choice else st.session_state.groq_keys
             if not keys:
-                st.error("ကျေးဇူးပြု၍ ဘေးဘား/အပေါ်ပိုင်းတွင် API Key အနည်းဆုံး တစ်ခု ထည့်သွင်းပေးပါ။")
+                st.error("ကျေးဇူးပြု၍ API Key အနည်းဆုံး တစ်ခု ထည့်သွင်းပေးပါ။")
             else:
-                with st.spinner("AI ဖြင့် ဇာတ်ကားကို ခွဲခြမ်းစိတ်ဖြာပြီး Storytelling ဇာတ်ညွှန်း ရေးသားနေသည်..."):
+                with st.spinner("AI ဖြင့် Storytelling ဇာတ်ညွှန်း ရေးသားနေသည်..."):
                     prompt = (
-                        "You are a professional movie recap narrator in Myanmar. "
-                        "Write a captivating storytelling voiceover script in Burmese based on a movie upload. "
+                        "You are a professional movie recap narrator. "
+                        "Write a captivating storytelling voiceover script in BURMESE language ONLY based on a movie upload. "
                         "Make it sound extremely engaging (e.g., 'ဒီစုံတွဲဟာ... မင်းကို ပါးစပ်အဟောင်းသား ဖြစ်သွားစေလိမ့်မယ်'). "
-                        "DO NOT include timestamps like [00:01]. Output PURE Burmese voiceover script text only."
+                        "Maintain character personas (e.g. if referring to myself, use 'ကျွန်တော်' or 'Jack' appropriately). "
+                        "DO NOT include timestamps like [00:01]. NO subtitle markers. PURE BURMESE voiceover script text only."
                     )
                     
                     if "Gemini" in engine_choice:
@@ -253,8 +251,8 @@ with tab1:
                         result, used_key_idx = call_real_groq_api(keys, prompt)
                         
                     if result:
-                        st.success(f"✅ အောင်မြင်သည်! (Key #{used_key_idx} ဖြင့် ဆောင်ရွက်ပြီးပါပြီ)")
-                        st.text_area("ထွက်လာသော အပြောအဆို ဇာတ်ညွှန်း:", result, height=350)
+                        st.success(f"✅ အောင်မြင်သည်! (Key #{used_key_idx})")
+                        st.text_area("ထွက်လာသော မြန်မာအပြောအဆို ဇာတ်ညွှန်း:", result, height=350)
                         st.download_button(
                             label="📥 ဇာတ်ညွှန်းဖိုင် ဒေါင်းလုဒ်လုပ်ရန် (.txt)",
                             data=result,
@@ -262,41 +260,44 @@ with tab1:
                             mime="text/plain"
                         )
                     else:
-                        st.error("❌ ထည့်သွင်းထားသော Key အားလုံး Limit ပြည့်သွားပါပြီ သို့မဟုတ် အလုပ်မလုပ်ပါ။ Key အသစ်ထပ်ထည့်ပါ။")
+                        st.error("❌ ထည့်သွင်းထားသော Key အားလုံး Limit ပြည့်သွားပါပြီ သို့မဟုတ် အလုပ်မလုပ်ပါ။")
 
 with tab2:
     st.subheader("🌐 English Movie Recap to Burmese Voiceover Translator")
-    st.markdown("TikTok, YouTube, Rednote လင့်ခ်များ (သို့မဟုတ်) ဗီဒီယိုဖိုင်များကို ထည့်သွင်းပြီး မူရင်းဇာတ်ကောင် နာမ်စားများအတိုင်း မြန်မာဘာသာသို့ အပြောအဆို ဇာတ်ညွှန်းအဖြစ် တိုက်ရိုက် ဘာသာပြန်ပါ။")
+    st.markdown("TikTok, YouTube, Rednote လင့်ခ်များ (သို့မဟုတ်) အင်္ဂလိပ် စာသား/ဗီဒီယို အကြောင်းအရာများကို ထည့်သွင်းပြီး မူရင်းနာမ်စားများ (ကျွန်တော်၊ ဂျက်) အတိုင်း မြန်မာဘာသာသို့ အပြောအဆို ဇာတ်ညွှန်းအဖြစ် တိုက်ရိုက် ဘာသာပြန်ပါ။")
 
-    trans_source = st.radio("ရင်းမြစ် ရွေးချယ်ပါ", ["Video Link (TikTok, YouTube, Rednote)", "Upload Video File"], horizontal=True, key="ts_src")
+    trans_source = st.radio("ရင်းမြစ် ရွေးချယ်ပါ", ["Video Link / English Content", "Upload Video File"], horizontal=True, key="ts_src")
     
-    link_input = ""
-    file_input = None
+    english_content_input = ""
     if "Link" in trans_source:
-        link_input = st.text_input("ဗီဒီယို လင့်ခ် ထည့်ပါ", placeholder="https://www.youtube.com/watch?v=...")
+        english_content_input = st.text_area("အင်္ဂလိပ် ဗီဒီယိုလင့်ခ် (သို့မဟုတ်) အင်္ဂလိပ် Recap စာသားများကို ဤနေရာတွင် ထည့်ပါ", placeholder="Paste YouTube/TikTok link or English recap text here...")
     else:
-        file_input = st.file_uploader("အင်္ဂလိပ်ဗီဒီယိုဖိုင် တင်ရန်", type=["mp4", "mkv", "mov"], key="ts_file")
+        st.file_uploader("အင်္ဂလိပ်ဗီဒီယိုဖိုင် တင်ရန်", type=["mp4", "mkv", "mov"], key="ts_file")
 
     if st.button("🌐 မြန်မာဘာသာသို့ အပြောအဆို ဘာသာပြန်မည်", type="primary", use_container_width=True):
-        if "Link" in trans_source and not link_input:
-            st.warning("ကျေးဇူးပြု၍ ဗီဒီယိုလင့်ခ် ထည့်ပါ။")
-        elif "File" in trans_source and not file_input:
-            st.warning("ကျေးဇူးပြု၍ ဗီဒီယိုဖိုင် တင်ပါ။")
+        if "Link" in trans_source and not english_content_input:
+            st.warning("ကျေးဇူးပြု၍ ဗီဒီယိုလင့်ခ် သို့မဟုတ် အင်္ဂလိပ် စာသားများကို ထည့်သွင်းပေးပါ။")
         else:
             keys = st.session_state.groq_keys if st.session_state.groq_keys else st.session_state.gemini_keys
             if not keys:
                 st.error("ကျေးဇူးပြု၍ API Key အနည်းဆုံး တစ်ခု ထည့်သွင်းပေးပါ။")
             else:
-                with st.spinner("အင်္ဂလိပ် Recap ကို မြန်မာဘာသာ အပြောအဆို ဇာတ်ညွှန်းအဖြစ် ဘာသာပြန်ဆိုနေသည်..."):
+                with st.spinner("အင်္ဂလိပ် Recap ကို မြန်မာဘာသာ အပြောအဆို ဇာတ်ညွှန်းအဖြစ် သဘာဝကျကျ ဘာသာပြန်ဆိုနေသည်..."):
+                    content_to_translate = english_content_input if english_content_input else "English movie recap video content about adventurous couple climbing Empire State Building."
                     trans_prompt = (
-                        "Translate the English movie recap video link or content into a natural, "
-                        "engaging Burmese storytelling voiceover script. Keep original character personas (e.g. I, Jack). "
-                        "NO timestamps, NO subtitle markers. Pure narrative voiceover script in Burmese."
+                        f"Translate and adapt the following English movie recap content into a natural, "
+                        f"engaging Burmese storytelling voiceover script. "
+                        f"Content to translate: {content_to_translate}\n\n"
+                        f"Rules:\n"
+                        f"1. Must be entirely in BURMESE language.\n"
+                        f"2. Keep original character personas (e.g. use 'ကျွန်တော်' for I/me, and 'ဂျက်' for Jack).\n"
+                        f"3. NO timestamps, NO subtitle markers, NO brackets like [00:01].\n"
+                        f"4. Pure narrative voiceover storytelling script style."
                     )
                     result, used_key_idx = call_real_groq_api(keys, trans_prompt)
                     if result:
-                        st.success(f"✅ ဘာသာပြန်ဆိုမှု အောင်မြင်သည်! (Key #{used_key_idx})")
-                        st.text_area("ထွက်လာသော မြန်မာဘာသာ အပြောအဆို ဇာတ်ညွှန်း:", result, height=350)
+                        st.success(f"✅ မြန်မာဘာသာသို့ ဘာသာပြန်ဆိုမှု အောင်မြင်သည်! (Key #{used_key_idx})")
+                        st.text_area("ထွက်လာသော မြန်မာအပြောအဆို ဇာတ်ညွှန်း:", result, height=350)
                         st.download_button(
                             label="📥 မြန်မာဘာသာ ဇာတ်ညွှန်း ဒေါင်းလုဒ်လုပ်ရန် (.txt)",
                             data=result,
@@ -307,5 +308,5 @@ with tab2:
                         st.error("❌ Key များ အလုပ်မလုပ်ပါ သို့မဟုတ် Limit ပြည့်နေပါသည်။")
 
 st.markdown("---")
-st.markdown("💡 **စနစ်အချက်အလက်:** ဤ App သည် ထည့်သွင်းထားသော API Key ၁၀ ခုအထိကို အလိုအလျောက် စစ်ဆေးပေးပြီး တစ်ခုခု Limit ပြည့်ပါက နောက် Key သို့ အလိုအလျောက် (Auto-Switch) ပြောင်းလဲ အသုံးပြုပေးပါသည်။")
+st.markdown("💡 **စနစ်အချက်အလက်:** ထည့်သွင်းထားသော Key များ Limit ပြည့်ပါက နောက် Key သို့ အလိုအလျောက် (Auto-Switch) ပြောင်းလဲ အလုပ်လုပ်ပေးမည်ဖြစ်ပါသည်။")
 
