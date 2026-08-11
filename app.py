@@ -17,10 +17,10 @@ def load_keys_from_file():
         try:
             with open(KEYS_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                return data.get("gemini_keys", [""] * 10), data.get("groq_keys", [""] * 10)
+                return data.get("gemini_keys", []), data.get("groq_keys", [])
         except:
             pass
-    return [""] * 10, [""] * 10
+    return [], []
 
 def save_keys_to_file(gemini_keys, groq_keys):
     try:
@@ -39,66 +39,95 @@ if "groq_keys" not in st.session_state:
     st.session_state.groq_keys = saved_groq
 
 st.title("🎬 AI Movie Recap & Video Translation Studio")
+
+# Custom CSS for styling buttons and containers like the screenshot
 st.markdown("""
-📌 **အသုံးပြုသူ လမ်းညွှန် (User Guide):**
-1. ဘယ်ဘက်ခြမ်း (Sidebar) တွင် Google AI Studio (Gemini) သို့မဟုတ် **Groq (`gsk_...`)** API Key များကို (၁၀) ခုအထိ ထည့်သွင်းသိမ်းဆည်းနိုင်ပါသည်။
-2. Key တစ်ခုခု Limit ပြည့်ခြင်း သို့မဟုတ် Error တက်ပါက အခြား Key သို့ **အလိုအလျောက် (Auto-Switching)** ပြောင်းလဲ အသုံးပြုသွားမည်ဖြစ်ပါသည်။
-3. အောက်ပါ Tab များမှ တစ်ဆင့် ဇာတ်ကား Recap Script ရေးသားခြင်းနှင့် ဗီဒီယို ဘာသာပြန်ဆိုခြင်းများကို လုပ်ဆောင်နိုင်ပါသည်။
-""")
+<style>
+.stButton>button {
+    border-radius: 8px;
+    font-weight: bold;
+}
+</style>
+""", unsafe_allow_html=True)
 
-# Sidebar for API Key Management
-st.sidebar.header("🔑 API Key စီမံခန့်ခွဲမှု (၁၀ ခုအထိ)")
-st.sidebar.markdown("အောက်ပါနေရာများတွင် သင်၏ API Key များကို ထည့်သွင်းပြီး **Save** ခလုတ်ကို နှိပ်ပါ။")
+# Sidebar for API Key Management (Matching the requested screenshot style)
+st.sidebar.header("🔑 API Key စီမံခန့်ခွဲမှု")
 
-with st.sidebar.expander("Google AI Studio Keys (Gemini)", expanded=False):
-    st.markdown("[Google AI Studio တွင် Key ယူရန် နှိပ်ပါ](https://aistudio.google.com/)")
-    temp_gemini = []
-    for i in range(10):
-        val = st.text_input(
-            f"Gemini Key #{i+1}",
-            value=st.session_state.gemini_keys[i],
-            type="password",
-            key=f"gemini_key_{i}"
-        )
-        temp_gemini.append(val)
-    
-    if st.button("💾 Gemini Keys များကို သိမ်းဆည်းမည်"):
-        st.session_state.gemini_keys = temp_gemini
-        if save_keys_to_file(st.session_state.gemini_keys, st.session_state.groq_keys):
-            st.sidebar.success("Gemini Keys များကို အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ!")
-        else:
-            st.sidebar.error("သိမ်းဆည်းရာတွင် အမှားအယွင်းရှိသည်။")
+# --- Gemini API Key Section ---
+st.sidebar.markdown("---")
+st.sidebar.markdown("**Gemini API Key (၁၀ ခုထိ ထည့်နိုင်သည်)** &nbsp;&nbsp;&nbsp; 👉 [API ယူရန် နှိပ်ပါ](https://aistudio.google.com/)")
 
-with st.sidebar.expander("Groq API Keys (`gsk_...`) ⭐", expanded=True):
-    st.markdown("[Groq Console တွင် Key ယူရန် နှိပ်ပါ](https://console.groq.com/keys)")
-    temp_groq = []
-    for i in range(10):
-        val = st.text_input(
-            f"Groq Key #{i+1} (gsk_...)",
-            value=st.session_state.groq_keys[i],
-            type="password",
-            key=f"groq_key_{i}",
-            placeholder="gsk_..."
-        )
-        temp_groq.append(val)
-        
-    if st.button("💾 Groq Keys များကို သိမ်းဆည်းမည်"):
-        st.session_state.groq_keys = temp_groq
-        if save_keys_to_file(st.session_state.gemini_keys, st.session_state.groq_keys):
-            st.sidebar.success("Groq Keys များကို အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ!")
-        else:
-            st.sidebar.error("သိမ်းဆည်းရာတွင် အမှားအယွင်းရှိသည်။")
+col_g_in, col_g_btn = st.sidebar.columns([3, 1])
+with col_g_in:
+    new_gemini_key = st.text_input("Gemini Input", placeholder="AlzaSy...", label_visibility="collapsed", key="new_gemini_input", type="password")
+with col_g_btn:
+    if st.button("➕ Add\nKey", key="add_gemini_btn"):
+        if new_gemini_key.strip():
+            if len(st.session_state.gemini_keys) < 10:
+                if new_gemini_key.strip() not in st.session_state.gemini_keys:
+                    st.session_state.gemini_keys.append(new_gemini_key.strip())
+                    save_keys_to_file(st.session_state.gemini_keys, st.session_state.groq_keys)
+                    st.rerun()
+                else:
+                    st.sidebar.warning("ဤ Key ရောက်ရှိပြီးသား ဖြစ်ပါသည်။")
+            else:
+                st.sidebar.error("အများဆုံး ၁၀ ခုသာ ထည့်နိုင်သည်။")
+
+# Display Gemini Keys as tags with delete button
+for idx, k in enumerate(st.session_state.gemini_keys):
+    masked = f"{k[:3]}***{k[-3:]}" if len(k) > 6 else "***"
+    c1, c2 = st.sidebar.columns([4, 1])
+    with c1:
+        st.markdown(f"<div style='background-color:#1e3d59; color:white; padding:6px 10px; border-radius:6px; margin-bottom:5px; font-size:13px;'>Gemini {idx+1}: {masked}</div>", unsafe_allow_html=True)
+    with c2:
+        if st.button("❌", key=f"del_gemimi_{idx}"):
+            st.session_state.gemini_keys.pop(idx)
+            save_keys_to_file(st.session_state.gemini_keys, st.session_state.groq_keys)
+            st.rerun()
+
+# --- Groq API Key Section ---
+st.sidebar.markdown("---")
+st.sidebar.markdown("**Groq API Key (အသံဖမ်းရန် - ၁၀ ခုထိ ထည့်နိုင်သည်)** &nbsp;&nbsp;&nbsp; 👉 [API ယူရန် နှိပ်ပါ](https://console.groq.com/keys)")
+
+col_gr_in, col_gr_btn = st.sidebar.columns([3, 1])
+with col_gr_in:
+    new_groq_key = st.text_input("Groq Input", placeholder="gsk_...", label_visibility="collapsed", key="new_groq_input", type="password")
+with col_gr_btn:
+    if st.button("➕ Add\nKey", key="add_groq_btn"):
+        if new_groq_key.strip():
+            if len(st.session_state.groq_keys) < 10:
+                if new_groq_key.strip() not in st.session_state.groq_keys:
+                    st.session_state.groq_keys.append(new_groq_key.strip())
+                    save_keys_to_file(st.session_state.gemini_keys, st.session_state.groq_keys)
+                    st.rerun()
+                else:
+                    st.sidebar.warning("ဤ Key ရောက်ရှိပြီးသား ဖြစ်ပါသည်။")
+            else:
+                st.sidebar.error("အများဆုံး ၁၀ ခုသာ ထည့်နိုင်သည်။")
+
+# Display Groq Keys as tags with delete button
+for idx, k in enumerate(st.session_state.groq_keys):
+    masked = f"{k[:4]}***{k[-4:]}" if len(k) > 8 else "***"
+    c1, c2 = st.sidebar.columns([4, 1])
+    with c1:
+        st.markdown(f"<div style='background-color:#17b978; color:white; padding:6px 10px; border-radius:6px; margin-bottom:5px; font-size:13px;'>Groq {idx+1}: {masked}</div>", unsafe_allow_html=True)
+    with c2:
+        if st.button("❌", key=f"del_groq_{idx}"):
+            st.session_state.groq_keys.pop(idx)
+            save_keys_to_file(st.session_state.gemini_keys, st.session_state.groq_keys)
+            st.rerun()
+
+st.sidebar.markdown("---")
 
 # Auto-Switching API Execution Function
 def execute_with_key_fallback(api_type, task_name, action_func):
     keys = st.session_state.gemini_keys if api_type == "Gemini" else st.session_state.groq_keys
-    valid_keys = [(idx + 1, k.strip()) for idx, k in enumerate(keys) if k.strip() != ""]
     
-    if not valid_keys:
-        st.error(f"ကျေးဇူးပြု၍ ဘေးဘား (Sidebar) တွင် {api_type} API Key အနည်းဆုံး တစ်ခု ထည့်သွင်းပေးပါ။ (Groq ဖြစ်ပါက gsk_ ဖြင့်စသော Key ထည့်ပါ)")
+    if not keys:
+        st.error(f"ကျေးဇူးပြု၍ ဘေးဘား (Sidebar) တွင် {api_type} API Key အနည်းဆုံး တစ်ခု Add လုပ်ပေးပါ။")
         return None
 
-    for key_num, key_val in valid_keys:
+    for key_num, key_val in enumerate(keys, 1):
         st.write(f"🔄 လုပ်ဆောင်နေသည်... [{api_type} Key #{key_num}] ဖြင့် {task_name}...")
         try:
             time.sleep(1.5)
@@ -115,8 +144,8 @@ def execute_with_key_fallback(api_type, task_name, action_func):
 tab1, tab2 = st.tabs(["🎥 Auto Movie Recap Generator", "🌐 Video Translation & Dubbing"])
 
 with tab1:
-    st.header("Auto Movie Recap Script Generator")
-    st.markdown("ဇာတ်ကားဗီဒီယိုဖိုင် တင်၍ လိုအပ်သော ကြာချိန်အတိုင်း အသေးစိတ် ဇာတ်ကောင် အမူအရာနှင့် အပြောအဆိုများပါဝင်သော Recap Script ကို အလိုအလျောက် ထုတ်ယူပါ။")
+    st.header("Auto Movie Recap Script Generator (Storytelling Style)")
+    st.markdown("ဇာတ်ကားဗီဒီယိုဖိုင် တင်၍ ပရိသတ်ကို ဆွဲဆောင်နိုင်သော (ဥပမာ- 'ဒီဇာတ်ကောင်ရဲ့ လုပ်ရပ်ဟာ မင်းကို ပါးစပ်အဟောင်းသား ဖြစ်သွားစေလိမ့်မယ်') ကဲ့သို့သော ဇာတ်လမ်းပြောပြသည့်စတိုင် ဇာတ်ညွှန်းများကို အလိုအလျောက် ထုတ်ယူပါ။")
 
     col1, col2 = st.columns([2, 1])
     
@@ -132,7 +161,7 @@ with tab1:
         api_choice = st.radio("အသုံးပြုမည့် AI Engine", ["Google AI Studio (Gemini)", "Groq (gsk_...)"])
 
     selected_duration_mins = int(recap_duration.split()[0])
-    st.info(f"ရွေးချယ်ထားသော ကြာချိန်: **{selected_duration_mins} မိနစ်စာ** အတိအကျပါဝင်မည့် စکرစ် (Script) ကို ဖန်တီးပေးမည်ဖြစ်ပါသည်။")
+    st.info(f"ရွေးချယ်ထားသော ကြာချိန်: **{selected_duration_mins} မိနစ်စာ** အတိအကျပါဝင်မည့် စိတ်ဝင်စားစရာ Storytelling Script ကို ဖန်တီးပေးမည်ဖြစ်ပါသည်။")
 
     if st.button("🎬 Recap Script ဖန်တီးမည်", type="primary"):
         if not uploaded_movie:
@@ -141,31 +170,27 @@ with tab1:
             api_name = "Gemini" if "Gemini" in api_choice else "Groq"
             
             def run_recap_task(k_num, k_val):
-                with st.spinner(f"Key #{k_num} ဖြင့် ဇာတ်ကားကို ခွဲခြမ်းစိတ်ဖြာပြီး {selected_duration_mins} မိနစ်စာ Recap ရေးသားနေသည်..."):
+                with st.spinner(f"Key #{k_num} ဖြင့် ဇာတ်ကားကို ခွဲခြမ်းစိတ်ဖြာပြီး {selected_duration_mins} မိနစ်စာ Storytelling Recap ရေးသားနေသည်..."):
                     time.sleep(2)
                 
-                mock_script = f"""# 🎬 {uploaded_movie.name} - {selected_duration_mins} မိနစ်စာ အထူး Recap Script
+                mock_script = f"""🎬 [{uploaded_movie.name}] - {selected_duration_mins} မိနစ်စာ အထူး Storytelling Recap Script
 (Generated via User {api_name} Key #{k_num})
 
-## အပိုင်း (၁) - နိဒါန်းပိုင်း (0:00 - {int(selected_duration_mins*0.2)} မိနစ်)
-* **Visual:** အစပိုင်း ရှုခင်း။ ပင်မဇာတ်ကောင် (Jack) က စိုးရိမ်ပူပန်သော အမူအရာဖြင့် တစ်ခုခုကို ရှာဖွေနေသည်။
-* **Audio / Voiceover:** "ကျွန်တော်... ဂျက် (Jack) ပါ။ ဒီနေရာကို ရောက်လာလိမ့်မယ်လို့ ဘယ်တုန်းကမှ မထင်ခဲ့မိဘူး..."
+ဒီဇာတ်ကားထဲက ဇာတ်ကောင်တွေ လုပ်ဆောင်ခဲ့တဲ့ အဖြစ်အပျက်ဟာ မင်းကို ပါးစပ်အဟောင်းသား ဖြစ်သွားစေလိမ့်မယ်။ သူတို့ဟာ ရုတ်တရက် အန္တရာယ်များတဲ့ နေရာတစ်ခုကို ခိုးဝင်ခဲ့ကြပြီး ဘယ်သူမှ မထင်မှတ်ထားတဲ့ လုပ်ရပ်ကို လုပ်ပြခဲ့ကြတယ်။ 
 
-## အပိုင်း (၂) - ပဋိပက္ခနှင့် အထွတ်အထိပ် (အလယ်ပိုင်း)
-* **Visual:** ရုတ်တရက် အန္တရာယ်တစ်ခု ကျရောက်လာသည်။ တိုက်ပွဲ သို့မဟုတ် လျှို့ဝှက်ချက် ပေါ်ထွက်လာသည်။
-* **Audio / Voiceover:** "ဒီလောက်နဲ့ ငါတို့ လက်မြှောက်အရှုံးပေးရမယ်လို့ မထင်နဲ့!"
+ဒါပေမဲ့ ပိုပြီး ရင်သပ်ရှုမောစရာ ကောင်းတာကတော့ ဒီအဖြစ်အပျက်ဟာ သာမန်ကိစ္စ တစ်ခုမဟုတ်ဘဲ နောက်ကွယ်မှာ ကြီးမားတဲ့ အကြောင်းရင်းတွေ ပါဝင်နေတယ်ဆိုတာပါပဲ။ မိနစ်ပိုင်းအတွင်းမှာပဲ သတင်းမီဒီယာတွေနဲ့ တာဝန်ရှိသူတွေ ရောက်လာပြီး တိုက်ရိုက်ထုတ်လွှင့်ခဲ့ကြတယ်။ ဟုတ်တယ်၊ ပိုရူးသွပ်ဖို့ကောင်းတာက ဒီအခြေအနေဟာ လူတိုင်းထင်ထားသလို မဟုတ်ဘဲ ရုတ်တရက် အလှည့်အပြောင်းကြီး ဖြစ်သွားခဲ့တာပါပဲ။ 
 
-## အပိုင်း (၃) - ဇာတ်သိမ်းပိုင်း (Resolution)
-* **Visual:** အားလုံး အဆုံးသတ်သွားပြီး ဇာတ်ကောင်၏ နောက်ဆုံး အပြုံးနှင့်အတူ ဇာတ်ကားပြီးဆုံးသွားသည်။
-* **Audio / Voiceover:** "အရာရာတိုင်းက ပြီးဆုံးသွားပြီ... ဒါပေမဲ့ ကျွန်တော့် ရည်မှန်းချက်ကတော့ ဆက်ရှိနေဦးမှာပဲ..."
+ပရိသတ်တွေကတော့ ရင်တမမနဲ့ ကြည့်နေကြသလို မြင်ဖူးသမျှထဲမှာ အာရ်မန်းတစ်ဆုံးနဲ့ အကြောက်တရားအပြည့်ဆုံးလို့ ပြောသူကပြောနဲ့ပေါ့။ ဘာပဲဖြစ်ဖြစ် သူတို့ဟာ တစ်နာရီအတွင်းမှာတင် အရာရာကို ရင်ဆိုင်ခဲ့ကြရတယ်။ ဒါပေမဲ့ အခု လူတိုင်းမေးနေကြတဲ့ မေးခွန်းကတော့ သူတို့ကို ဒီအတိုင်း လွှတ်ပေးသင့်သလား၊ ဒါမှမဟုတ် ဒီနှစ်ရဲ့ အတုံးအအဆုံး အဖြစ်အပျက်အတွက် တာဝန်ယူရမှာလား ဆိုတာပါပဲ။ 
+
+ဒါကိုကြည့်ပြီးရင်ရော မင်းရဲ့ အယူအဆက ဘယ်လိုရှိလဲ? မင်းရဲ့ ထင်မြင်ချက်တွေကို အောက်မှာ ကွန်မန့်ရေးခဲ့ပါဦး။
 """
-                st.markdown("### 📝 ထွက်လာသော Recap Script")
-                st.markdown(mock_script)
+                st.markdown("### 📝 ထွက်လာသော ဇာတ်လမ်းပြောပြသည့်စတိုင် Recap Script")
+                st.text_area("Copy your script here:", mock_script, height=300)
 
                 st.download_button(
                     label="📥 စکرစ်ဖိုင်ကို ဒေါင်းလုဒ်လုပ်ရန် (.txt)",
                     data=mock_script,
-                    file_name=f"{uploaded_movie.name}_recap_{selected_duration_mins}mins.txt",
+                    file_name=f"{uploaded_movie.name}_storytelling_recap_{selected_duration_mins}mins.txt",
                     mime="text/plain"
                 )
                 return True
@@ -231,3 +256,4 @@ with tab2:
 
 st.markdown("---")
 st.markdown("💡 **အကြံပြုချက်:** User ကိုယ်တိုင် ထည့်သွင်းထားသော Key (၁၀) ခုကို `user_api_keys.json` တွင် သိမ်းဆည်းပေးထားမည်ဖြစ်ပြီး၊ တစ်ခုခု Limit ပြည့်ပါက သို့မဟုတ် Error တက်ပါက နောက် Key သို့ အလိုအလျောက် (Auto-Switch) ပြောင်းလဲ အသုံးပြုသွားမည်ဖြစ်ပါသည်။")
+
