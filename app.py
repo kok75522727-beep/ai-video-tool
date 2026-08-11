@@ -77,14 +77,14 @@ st.markdown("<h3 style='text-align: center; margin-bottom: 20px;'>🎬 AI Movie 
 # --- API Key Management Section ---
 with st.container():
     st.markdown('<div class="main-card">', unsafe_allow_html=True)
-    st.markdown("🔑 **API Key စီမံခန့်ခွဲမှု** (၁၀ ခုအထိ သိမ်းဆည်းနိုင်သည်)", unsafe_allow_html=True)
+    st.markdown("🔑 **API Key စီမံခန့်ခွဲမှု** (Gemini နှင့် Groq Keys များ ၁၀ ခုစီ သိမ်းဆည်းနိုင်သည်)", unsafe_allow_html=True)
     
     # Gemini Keys
     st.markdown("---")
     st.markdown("✨ **Gemini API Key** &nbsp; 👉 [Key ယူရန်](https://aistudio.google.com/)")
     col_g_in, col_g_btn = st.columns([3, 1])
     with col_g_in:
-        new_g = st.text_input("Gemini Key", placeholder="AlzaSy...", label_visibility="collapsed", key="in_gemini", type="password")
+        new_g = st.text_input("Gemini Key", placeholder="AIzaSy...", label_visibility="collapsed", key="in_gemini", type="password")
     with col_g_btn:
         if st.button("➕ Add", use_container_width=True, key="btn_add_gemini"):
             if new_g.strip():
@@ -141,35 +141,44 @@ with st.container():
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-# API Helpers with Auto-Switching
-def call_groq(api_keys, prompt):
-    for idx, key in enumerate(api_keys):
-        try:
-            headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
-            url = "https://api.groq.com/openai/v1/chat/completions"
-            payload = {
-                "model": "llama-3.3-70b-versatile",
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.7
-            }
-            res = requests.post(url, headers=headers, json=payload, timeout=30)
-            if res.status_code == 200:
-                return res.json()['choices'][0]['message']['content'], idx + 1
-        except:
-            continue
-    return None, None
-
-def call_gemini(api_keys, prompt):
-    for idx, key in enumerate(api_keys):
-        try:
-            headers = {"Content-Type": "application/json"}
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={key}"
-            payload = {"contents": [{"parts": [{"text": prompt}]}]}
-            res = requests.post(url, headers=headers, json=payload, timeout=30)
-            if res.status_code == 200:
-                return res.json()['candidates'][0]['content']['parts'][0]['text'], idx + 1
-        except:
-            continue
+# Dual-Engine Auto-Fallback Calling Mechanism
+def call_ai_dual_fallback(prompt, primary_engine="Groq"):
+    groq_keys = st.session_state.groq_keys
+    gemini_keys = st.session_state.gemini_keys
+    
+    # Determine order based on primary engine preference
+    engines_order = []
+    if primary_engine == "Groq":
+        engines_order = [("Groq", groq_keys), ("Gemini", gemini_keys)]
+    else:
+        engines_order = [("Gemini", gemini_keys), ("Groq", groq_keys)]
+    
+    for engine_name, keys in engines_order:
+        for idx, key in enumerate(keys):
+            if engine_name == "Groq":
+                try:
+                    headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+                    url = "https://api.groq.com/openai/v1/chat/completions"
+                    payload = {
+                        "model": "llama-3.3-70b-versatile",
+                        "messages": [{"role": "user", "content": prompt}],
+                        "temperature": 0.7
+                    }
+                    res = requests.post(url, headers=headers, json=payload, timeout=30)
+                    if res.status_code == 200:
+                        return res.json()['choices'][0]['message']['content'], f"Groq Key #{idx+1}"
+                except:
+                    continue
+            else:
+                try:
+                    headers = {"Content-Type": "application/json"}
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={key}"
+                    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+                    res = requests.post(url, headers=headers, json=payload, timeout=30)
+                    if res.status_code == 200:
+                        return res.json()['candidates'][0]['content']['parts'][0]['text'], f"Gemini Key #{idx+1}"
+                except:
+                    continue
     return None, None
 
 # --- Tabs ---
@@ -179,30 +188,28 @@ with tab1:
     st.markdown('<div class="main-card">', unsafe_allow_html=True)
     st.markdown("#### 🎬 Auto Movie Recap Voiceover Script")
     movie_file = st.file_uploader("ဗီဒီယိုဖိုင် တင်ရန် (MP4, MKV)", type=["mp4", "mkv"], key="f1")
-    engine = st.radio("AI Engine", ["Gemini API", "Groq API"], horizontal=True)
+    primary_eng = st.radio("ဦးစားပေး AI Engine", ["Groq API", "Gemini API"], horizontal=True)
 
     if st.button("🚀 ဇာတ်ညွှန်း ဖန်တီးမည်", type="primary", use_container_width=True):
         if not movie_file:
             st.warning("ဗီဒီယိုဖိုင် တင်ပေးပါ။")
         else:
-            keys = st.session_state.gemini_keys if "Gemini" in engine else st.session_state.groq_keys
-            if not keys:
-                st.error("API Key ထည့်သွင်းပေးပါ။")
+            if not st.session_state.groq_keys and not st.session_state.gemini_keys:
+                st.error("ကျေးဇူးပြု၍ Groq (သို့) Gemini API Key တစ်ခုခု ထည့်သွင်းပေးပါ။")
             else:
-                with st.spinner("ပညာသားပါသော Storytelling ဇာတ်ညွှန်း ရေးသားနေသည်..."):
+                with st.spinner("Dual-Engine Auto-Fallback ဖြင့် ဇာတ်ညွှန်း ရေးသားနေသည်..."):
                     prompt = (
-                        "You are an elite movie recap narrator. Write a highly engaging, smooth, and professional storytelling "
-                        "voiceover script in BURMESE language ONLY. DO NOT repeat sentences unnecessarily. "
-                        "Use natural phrasing like a professional YouTube movie recap creator (e.g., engaging hooks, smooth narrative flow). "
-                        "NO timestamps like [00:01]. Pure narrative script."
+                        "You are an elite, professional Burmese movie recap creator. Write a highly engaging storytelling voiceover script in BURMESE. "
+                        "STYLE REFERENCE: Write like a professional YouTuber telling a thrilling story (smooth, natural, emotional, captivating, NO repetitive phrasing, NO timestamps like [00:01]). "
+                        "Example tone: 'ဒီဇာတ်လမ်းလေးကတော့ လွန်ခဲ့တဲ့ နှစ်ပေါင်းများစွာက... မင်းကို ပါးစပ်အဟောင်းသား ဖြစ်သွားစေလိမ့်မယ်...'"
                     )
-                    res, kidx = call_gemini(keys, prompt) if "Gemini" in engine else call_groq(keys, prompt)
+                    res, source_info = call_ai_dual_fallback(prompt, primary_engine="Groq" if "Groq" in primary_eng else "Gemini")
                     if res:
-                        st.success(f"✅ အောင်မြင်သည်! (Key #{kidx})")
+                        st.success(f"✅ အောင်မြင်သည်! အသုံးပြုသွားသော Key: ({source_info})")
                         st.text_area("ထွက်လာသော ဇာတ်ညွှန်း:", res, height=300)
                         st.download_button("📥 ဒေါင်းလုဒ် (.txt)", res, file_name="recap_script.txt", mime="text/plain")
                     else:
-                        st.error("❌ Key အလုပ်မလုပ်ပါ။")
+                        st.error("❌ ထည့်သွင်းထားသော Key အားလုံး အလုပ်မလုပ်ပါ သို့မဟုတ် Limit ပြည့်နေပါသည်။")
     st.markdown('</div>', unsafe_allow_html=True)
 
 with tab2:
@@ -214,31 +221,30 @@ with tab2:
         if not txt_input:
             st.warning("စာသား (သို့) လင့်ခ် ထည့်ပါ။")
         else:
-            keys = st.session_state.groq_keys if st.session_state.groq_keys else st.session_state.gemini_keys
-            if not keys:
-                st.error("API Key ထည့်သွင်းပေးပါ။")
+            if not st.session_state.groq_keys and not st.session_state.gemini_keys:
+                st.error("ကျေးဇူးပြု၍ API Key ထည့်သွင်းပေးပါ။")
             else:
-                with st.spinner("ဆွဲဆောင်မှုရှိသော မြန်မာဘာသာ Storytelling ဇာတ်ညွှန်းအဖြစ် ပြောင်းလဲနေသည်..."):
+                with st.spinner("Dual-Engine Auto-Fallback ဖြင့် ဆွဲဆောင်မှုရှိသော မြန်မာဘာသာ Storytelling ဇာတ်ညွှန်းအဖြစ် ပြောင်းလဲနေသည်..."):
                     prompt = (
                         f"You are a professional Burmese movie recap script writer and translator. "
-                        f"Take the following English recap content and completely adapt it into an engaging, smooth, and natural "
-                        f"Burmese storytelling voiceover script. DO NOT do a word-for-word clumsy translation. Avoid repetitive phrasing. "
-                        f"Make it flow like a top-tier cinematic story.\n\n"
-                        f"Source Content: {txt_input}\n\n"
-                        f"CRITICAL RULES:\n"
-                        f"1. BURMESE LANGUAGE ONLY.\n"
-                        f"2. NO timestamps [00:01] or subtitle markers.\n"
-                        f"3. Use proper narrative pronouns ('ကျွန်တော်', character names like 'ဂျက်', 'ကောင်မလေး') naturally without repetition."
+                        f"Translate and adapt the following English content into a natural, engaging, professional Burmese storytelling voiceover script.\n\n"
+                        f"IMPORTANT RULES:\n"
+                        f"1. DO NOT do a word-for-word clumsy robotic translation. Make it sound like a human YouTube storyteller.\n"
+                        f"2. STYLE EXAMPLE TO MATCH:\n"
+                        f"   'ဒီဇာတ်လမ်းလေးကတော့ လွန်ခဲ့တဲ့ နှစ်ပေါင်းများစွာက... အဲ့ဒီနောက်မှာ ဂျက်က ကောင်မလေးကို ချစ်ကြောင်း သိသွားတဲ့အခါ...'\n"
+                        f"3. NO repetitive loops, NO timestamps like [00:01].\n"
+                        f"4. Use natural Burmese Unicode pronouns ('ကျွန်တော်', character names like 'ဂျက်', 'ကောင်မလေး') smoothly.\n\n"
+                        f"Source Content to Adapt:\n{txt_input}"
                     )
-                    res, kidx = call_groq(keys, prompt) if keys == st.session_state.groq_keys else call_gemini(keys, prompt)
+                    res, source_info = call_ai_dual_fallback(prompt, primary_engine="Groq")
                     if res:
-                        st.success(f"✅ အောင်မြင်သည်! (Key #{kidx})")
+                        st.success(f"✅ အောင်မြင်သည်! အသုံးပြုသွားသော Key: ({source_info})")
                         st.text_area("မြန်မာအပြောအဆို ဇာတ်ညွှန်း:", res, height=300)
                         st.download_button("📥 ဒေါင်းလုဒ် (.txt)", res, file_name="burmese_recap.txt", mime="text/plain")
                     else:
-                        st.error("❌ Key အလုပ်မလုပ်ပါ။")
+                        st.error("❌ ထည့်သွင်းထားသော Key အားလုံး အလုပ်မလုပ်ပါ သို့မဟုတ် Limit ပြည့်နေပါသည်။")
     st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("---")
-st.markdown("<p style='text-align: center; color: #8b949e; font-size: 11px;'>Sai Myanmar Studio • Auto-Switching System</p>", unsafe_allow_html=True)
-            
+st.markdown("<p style='text-align: center; color: #8b949e; font-size: 11px;'>Sai Myanmar Studio • Dual-Engine Auto-Fallback System</p>", unsafe_allow_html=True)
+
